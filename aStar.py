@@ -8,13 +8,12 @@ pygame.init()
 
 
 class Node:
-    def __init__(self, x, y, name):
+    def __init__(self, x, y):
         self.x = x
         self.y = y
-        self.name = name
         self.parent = None
         self.H = 0
-        self.G = 0
+        self.G = 10000000000
         self.children = []
         self.isObstacle = False
         self.start = False
@@ -22,15 +21,14 @@ class Node:
 
     def cost(self):
         if self.parent:
-            return int(math.sqrt((self.x - self.parent.x) ** 2) + math.sqrt(
-                (self.y - self.parent.y) ** 2))
+            return math.sqrt(((self.x - self.parent.x) ** 2) + ((self.y - self.parent.y) ** 2))
         else:
             return 0
 
-    def isWall(self):
+    def isObstacle(self):
         return self.isObstacle
 
-    def setWall(self):
+    def setObstacle(self):
         self.isObstacle = True
 
     def isStart(self):
@@ -48,17 +46,19 @@ class Node:
 
 def ED(current, goal):
     if not current == goal:
-        return int(math.sqrt((goal.x - current.x) ** 2) + math.sqrt((goal.y - current.y) ** 2))
+        return math.sqrt(((goal.x - current.x) ** 2) + ((goal.y - current.y) ** 2))
     else:
         return 0
 
 
-def araStar(start, goal):
+def araStar(start, goal, weight):
     openList = set()
     closedList = set()
     incumbent = []
     # s
     current = start
+
+    current.G = 0
 
     # sets the start nodes heuristic
     current.H = ED(current, goal)
@@ -67,17 +67,14 @@ def araStar(start, goal):
     openList.add(current)
 
     # G
-    pathCost = 10000000000
+    pathCost = 100000000000000000
 
-    # w0
-    temp = max(openList, key=lambda o: (pathCost - o.G) / o.H)
-    weight = 300000
-    weightDelta = weight / 10
+    # weight Delta
+    weightDelta = weight / 2
 
     # while there are nodes in the open list
     while openList:
-        tempList = openList
-        NewSolution = improvedSolution(goal, tempList, weight, pathCost)
+        NewSolution = improvedSolution(goal, openList, weight, pathCost)
 
         if NewSolution:
             pathCost = NewSolution[-1].G
@@ -86,8 +83,21 @@ def araStar(start, goal):
             time.sleep(.5)
         else:
             return incumbent
-        weight = weight - weightDelta
 
+        # weight = weight - weightDelta
+
+        for child in current.children:
+            if current.G + ED(current, child) < child.G:
+                if child.isObstacle:
+                    continue
+                child.parent = current
+                child.G = current.G + child.cost()
+                child.H = ED(child, goal)
+
+        for node in list(openList):
+            if node.G + node.H >= pathCost:
+                closedList.add(node)
+                openList.remove(node)
     return incumbent
 
 
@@ -96,14 +106,14 @@ def improvedSolution(goal, openList, weight, pathCost):
     # while there are nodes in the open list
     while openList:
 
-        current = min(openList, key=lambda o: o.G + weight * o.H)
+        current = min(openList, key=lambda o: o.G + (weight * o.H))
 
         openList.remove(current)
         closedList.add(current)
 
         # exits function if estimated travel is more than best path cost
-        if pathCost < current.G + weight * current.H:
-            # pathCost is proven to be w-admissable
+        if pathCost <= current.G + (weight * current.H):
+            # pathCost is proven to be w-admissible
             return None
 
         # for each child
@@ -117,6 +127,9 @@ def improvedSolution(goal, openList, weight, pathCost):
                 continue
             if current.parent:
                 current.G = current.parent.G + current.cost()
+
+            drawRect(CYAN, node.x, node.y)
+            pygame.display.update()
 
             # Prune nodes over the bound
             if node.G + node.H > pathCost:
@@ -132,7 +145,6 @@ def improvedSolution(goal, openList, weight, pathCost):
                 if not node == goal:
                     node.H = ED(node, goal)
                 else:
-                    node.H = 1
                     path = []
                     while node.parent:
                         node = node.parent
@@ -204,33 +216,35 @@ def randomColor():
 
 
 GRID_SIZE = 10
-GRID_X = 50
-GRID_Y = 50
+GRID_X = 100
+GRID_Y = 100
 MARGIN = 2
 os.environ['SDL_VIDEO_CENTERED'] = '1'
 screen = pygame.display.set_mode(
     (GRID_X * GRID_SIZE + GRID_X * MARGIN + MARGIN, GRID_Y * GRID_SIZE + GRID_Y * MARGIN + MARGIN), pygame.RESIZABLE)
 pygame.display.set_caption('A* Algorithm')
-WHITE = (255, 255, 255)
+GRAY = (169, 169, 169)
 BLACK = (0, 0, 0)
 GREEN = (0, 255, 0)
 RED = (255, 0, 0)
 BLUE = (0, 0, 255)
 CYAN = (0, 204, 204)
-percentChanceForWall = 10
+PINK = (255, 105, 180)
+percentChanceForWall = 30
 actualPercentOfWalls = 0
+weight = 2
 
-grid = [[Node(i, j, '') for i in range(GRID_X)] for j in range(GRID_Y)]
+grid = [[Node(i, j) for j in range(GRID_X)] for i in range(GRID_Y)]
 
-S = grid[GRID_X - 1][0]
-G = grid[0][GRID_Y - 1]
+S = grid[0][GRID_Y - 1]
+G = grid[GRID_X - 1][0]
 
-for x in range(GRID_X):
-    for y in range(GRID_Y):
+for y in range(GRID_X):
+    for x in range(GRID_Y):
         if grid[x][y] != S and grid[x][y] != G:
             if randint(1, 100) <= percentChanceForWall:
-                grid[x][y].setWall()
-                actualPercentOfWalls = actualPercentOfWalls + 1
+                grid[x][y].setObstacle()
+                actualPercentOfWalls += 1
         if north(grid, x, y, GRID_Y):
             grid[x][y].children.append(north(grid, x, y, GRID_Y))
         if south(grid, x, y, GRID_Y):
@@ -248,22 +262,32 @@ for x in range(GRID_X):
         if southWest(grid, x, y, GRID_X, GRID_Y):
             grid[x][y].children.append(southWest(grid, x, y, GRID_X, GRID_Y))
 
-for x in range(GRID_X):
-    for y in range(GRID_Y):
-        if grid[y][x].isObstacle:
+# for i in range(19, 79):
+#     grid[i][19].setObstacle()
+#
+# for i in range(19, 79):
+#     grid[79][i].setObstacle()
+
+for y in range(GRID_X):
+    for x in range(GRID_Y):
+        if grid[x][y].isObstacle:
             drawRect(BLACK, x, y)
         else:
-            drawRect(WHITE, x, y)
+            drawRect(GRAY, x, y)
         if x == 0 and y == GRID_Y - 1:
             drawRect(GREEN, x, y)
         if x == GRID_X - 1 and y == 0:
             drawRect(RED, x, y)
 pygame.display.flip()
 startTime = time.time()
-path = araStar(S, G)
-print("It took %s seconds to run" % (time.time() - startTime))
+path = araStar(S, G, weight)
+print('It took %s seconds to run' % str(round(time.time() - startTime, 3)))
 if path:
-    drawPath(path, BLUE)
+    drawPath(path, PINK)
+    print(path[-1].G)
+    drawRect(GREEN, S.x, S.y)
+    drawRect(RED, G.x, G.y)
+    pygame.display.update()
 else:
     print('No path from start to goal.')
 
@@ -272,3 +296,4 @@ while True:
         if event.type == pygame.QUIT:
             pygame.quit()
             quit()
+
