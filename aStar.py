@@ -57,7 +57,6 @@ def araStar(start, goal, weight):
     incumbent = []
     # s
     current = start
-
     current.G = 0
 
     # sets the start nodes heuristic
@@ -84,7 +83,7 @@ def araStar(start, goal, weight):
         else:
             return incumbent
 
-        # weight = weight - weightDelta
+        weight = weight - weightDelta
 
         for child in current.children:
             if current.G + ED(current, child) < child.G:
@@ -128,7 +127,7 @@ def improvedSolution(goal, openList, weight, pathCost):
             if current.parent:
                 current.G = current.parent.G + current.cost()
 
-            drawRect(CYAN, node.x, node.y)
+            drawRect(WHITE, node.x, node.y)
             pygame.display.update()
 
             # Prune nodes over the bound
@@ -225,14 +224,15 @@ screen = pygame.display.set_mode(
 pygame.display.set_caption('A* Algorithm')
 GRAY = (169, 169, 169)
 BLACK = (0, 0, 0)
+WHITE = (255, 255, 255)
 GREEN = (0, 255, 0)
 RED = (255, 0, 0)
 BLUE = (0, 0, 255)
 CYAN = (0, 204, 204)
 PINK = (255, 105, 180)
-percentChanceForWall = 30
+percentChanceForWall = 20
 actualPercentOfWalls = 0
-weight = 2
+weight = 1
 
 grid = [[Node(i, j) for j in range(GRID_X)] for i in range(GRID_Y)]
 
@@ -262,11 +262,11 @@ for y in range(GRID_X):
         if southWest(grid, x, y, GRID_X, GRID_Y):
             grid[x][y].children.append(southWest(grid, x, y, GRID_X, GRID_Y))
 
-# for i in range(19, 79):
-#     grid[i][19].setObstacle()
-#
-# for i in range(19, 79):
-#     grid[79][i].setObstacle()
+for i in range(19, 79):
+    grid[i][19].setObstacle()
+
+for i in range(19, 79):
+    grid[79][i].setObstacle()
 
 for y in range(GRID_X):
     for x in range(GRID_Y):
