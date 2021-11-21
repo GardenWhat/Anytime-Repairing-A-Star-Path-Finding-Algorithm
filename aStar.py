@@ -1,54 +1,10 @@
-import math
 import time
-from random import randint
 import os
 import pygame
+import utils
+import node
 
 pygame.init()
-
-
-class Node:
-    def __init__(self, x, y):
-        self.x = x
-        self.y = y
-        self.parent = None
-        self.H = 0
-        self.G = 10000000000
-        self.children = []
-        self.isObstacle = False
-        self.start = False
-        self.goal = False
-
-    def cost(self):
-        if self.parent:
-            return math.sqrt(((self.x - self.parent.x) ** 2) + ((self.y - self.parent.y) ** 2))
-        else:
-            return 0
-
-    def isObstacle(self):
-        return self.isObstacle
-
-    def setObstacle(self):
-        self.isObstacle = True
-
-    def isStart(self):
-        return self.start
-
-    def setStart(self):
-        self.start = True
-
-    def isGoal(self):
-        return self.goal
-
-    def setGoal(self):
-        self.goal = True
-
-
-def ED(current, goal):
-    if not current == goal:
-        return math.sqrt(((goal.x - current.x) ** 2) + ((goal.y - current.y) ** 2))
-    else:
-        return 0
 
 
 def araStar(start, goal, weight):
@@ -57,10 +13,11 @@ def araStar(start, goal, weight):
     incumbent = []
     # s
     current = start
+
     current.G = 0
 
     # sets the start nodes heuristic
-    current.H = ED(current, goal)
+    current.H = utils.ED(current, goal)
 
     # adds start to open list
     openList.add(current)
@@ -78,20 +35,20 @@ def araStar(start, goal, weight):
         if NewSolution:
             pathCost = NewSolution[-1].G
             incumbent = NewSolution
-            drawPath(incumbent, randomColor())
+            utils.drawPath(incumbent, utils.randomColor(), start, goal, screen, MARGIN, GRID_SIZE)
             time.sleep(.5)
         else:
             return incumbent
 
-        weight = weight - weightDelta
+        # weight = weight - weightDelta
 
         for child in current.children:
-            if current.G + ED(current, child) < child.G:
+            if current.G + utils.ED(current, child) < child.G:
                 if child.isObstacle:
                     continue
                 child.parent = current
                 child.G = current.G + child.cost()
-                child.H = ED(child, goal)
+                child.H = utils.ED(child, goal)
 
         for node in list(openList):
             if node.G + node.H >= pathCost:
@@ -127,7 +84,7 @@ def improvedSolution(goal, openList, weight, pathCost):
             if current.parent:
                 current.G = current.parent.G + current.cost()
 
-            drawRect(WHITE, node.x, node.y)
+            utils.drawRect(CYAN, node.x, node.y, screen, MARGIN, GRID_SIZE)
             pygame.display.update()
 
             # Prune nodes over the bound
@@ -142,7 +99,7 @@ def improvedSolution(goal, openList, weight, pathCost):
                 node.parent = current
                 node.G = current.G + node.cost()
                 if not node == goal:
-                    node.H = ED(node, goal)
+                    node.H = utils.ED(node, goal)
                 else:
                     path = []
                     while node.parent:
@@ -154,64 +111,7 @@ def improvedSolution(goal, openList, weight, pathCost):
     return None
 
 
-def drawRect(color, x, y):
-    pygame.draw.rect(screen,
-                     color,
-                     [(MARGIN + GRID_SIZE) * x + MARGIN,
-                      (MARGIN + GRID_SIZE) * y + MARGIN,
-                      GRID_SIZE,
-                      GRID_SIZE])
 
-
-def north(grid, x, y, GRID_Y):
-    if y > 0 and not grid[x][y - 1].isObstacle:
-        return grid[x][y - 1]
-
-
-def south(grid, x, y, GRID_Y):
-    if y < GRID_Y - 1 and not grid[x][y + 1].isObstacle:
-        return grid[x][y + 1]
-
-
-def west(grid, x, y, GRID_X):
-    if x > 0 and not grid[x - 1][y].isObstacle:
-        return grid[x - 1][y]
-
-
-def east(grid, x, y, GRID_X):
-    if x < GRID_X - 1 and not grid[x + 1][y].isObstacle:
-        return grid[x + 1][y]
-
-
-def northEast(grid, x, y, GRID_X, GRID_Y):
-    if x < GRID_X - 1 and y > 0 and not grid[x + 1][y - 1].isObstacle:
-        return grid[x + 1][y - 1]
-
-
-def southEast(grid, x, y, GRID_X, GRID_Y):
-    if x < GRID_X - 1 and y < GRID_Y - 1 and not grid[x + 1][y + 1].isObstacle:
-        return grid[x + 1][y + 1]
-
-
-def northWest(grid, x, y, GRID_X, GRID_Y):
-    if x > 0 and y > 0 and not grid[x - 1][y - 1].isObstacle:
-        return grid[x - 1][y - 1]
-
-
-def southWest(grid, x, y, GRID_X, GRID_Y):
-    if x > 0 and y < GRID_Y - 1 and not grid[x - 1][y + 1].isObstacle:
-        return grid[x - 1][y + 1]
-
-
-def drawPath(path, color):
-    for p in path:
-        if not p == S and not p == G:
-            drawRect(color, p.x, p.y)
-            pygame.display.update()
-
-
-def randomColor():
-    return randint(0, 255), randint(0, 255), randint(0, 255)
 
 
 GRID_SIZE = 10
@@ -224,69 +124,49 @@ screen = pygame.display.set_mode(
 pygame.display.set_caption('A* Algorithm')
 GRAY = (169, 169, 169)
 BLACK = (0, 0, 0)
-WHITE = (255, 255, 255)
 GREEN = (0, 255, 0)
 RED = (255, 0, 0)
 BLUE = (0, 0, 255)
 CYAN = (0, 204, 204)
 PINK = (255, 105, 180)
-percentChanceForWall = 20
+percentChanceForWall = 30
 actualPercentOfWalls = 0
-weight = 1
+weight = 2
 
-grid = [[Node(i, j) for j in range(GRID_X)] for i in range(GRID_Y)]
+grid = [[node.Node(i, j) for j in range(GRID_X)] for i in range(GRID_Y)]
 
-S = grid[0][GRID_Y - 1]
-G = grid[GRID_X - 1][0]
+start = grid[0][GRID_Y - 1]
+goal = grid[GRID_X - 1][0]
 
-for y in range(GRID_X):
-    for x in range(GRID_Y):
-        if grid[x][y] != S and grid[x][y] != G:
-            if randint(1, 100) <= percentChanceForWall:
-                grid[x][y].setObstacle()
-                actualPercentOfWalls += 1
-        if north(grid, x, y, GRID_Y):
-            grid[x][y].children.append(north(grid, x, y, GRID_Y))
-        if south(grid, x, y, GRID_Y):
-            grid[x][y].children.append(south(grid, x, y, GRID_Y))
-        if west(grid, x, y, GRID_X):
-            grid[x][y].children.append(west(grid, x, y, GRID_X))
-        if east(grid, x, y, GRID_X):
-            grid[x][y].children.append(east(grid, x, y, GRID_X))
-        if northEast(grid, x, y, GRID_X, GRID_Y):
-            grid[x][y].children.append(northEast(grid, x, y, GRID_X, GRID_Y))
-        if northWest(grid, x, y, GRID_X, GRID_Y):
-            grid[x][y].children.append(northWest(grid, x, y, GRID_X, GRID_Y))
-        if southEast(grid, x, y, GRID_X, GRID_Y):
-            grid[x][y].children.append(southEast(grid, x, y, GRID_X, GRID_Y))
-        if southWest(grid, x, y, GRID_X, GRID_Y):
-            grid[x][y].children.append(southWest(grid, x, y, GRID_X, GRID_Y))
+grid = utils.setChildren(GRID_X, GRID_Y, grid, percentChanceForWall, actualPercentOfWalls, start, goal)
 
-for i in range(19, 79):
-    grid[i][19].setObstacle()
 
-for i in range(19, 79):
-    grid[79][i].setObstacle()
+
+# for i in range(19, 79):
+#     grid[i][19].setObstacle()
+#
+# for i in range(19, 79):
+#     grid[79][i].setObstacle()
 
 for y in range(GRID_X):
     for x in range(GRID_Y):
         if grid[x][y].isObstacle:
-            drawRect(BLACK, x, y)
+            utils.drawRect(BLACK, x, y, screen, MARGIN, GRID_SIZE)
         else:
-            drawRect(GRAY, x, y)
+            utils.drawRect(GRAY, x, y, screen, MARGIN, GRID_SIZE)
         if x == 0 and y == GRID_Y - 1:
-            drawRect(GREEN, x, y)
+            utils.drawRect(GREEN, x, y, screen, MARGIN, GRID_SIZE)
         if x == GRID_X - 1 and y == 0:
-            drawRect(RED, x, y)
+            utils.drawRect(RED, x, y, screen, MARGIN, GRID_SIZE)
 pygame.display.flip()
 startTime = time.time()
-path = araStar(S, G, weight)
+path = araStar(start, goal, weight)
 print('It took %s seconds to run' % str(round(time.time() - startTime, 3)))
 if path:
-    drawPath(path, PINK)
+    utils.drawPath(path, PINK, start, goal, screen, MARGIN, GRID_SIZE)
     print(path[-1].G)
-    drawRect(GREEN, S.x, S.y)
-    drawRect(RED, G.x, G.y)
+    utils.drawRect(GREEN, start.x, start.y, screen, MARGIN, GRID_SIZE)
+    utils.drawRect(RED, goal.x, goal.y, screen, MARGIN, GRID_SIZE)
     pygame.display.update()
 else:
     print('No path from start to goal.')
