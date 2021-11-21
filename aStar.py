@@ -137,7 +137,7 @@ def main():
     goal = grid[GRID_X - 1][0]
 
     grid = utils.setChildren(GRID_X, GRID_Y, grid, percentChanceForWall, actualPercentOfWalls, start, goal)
-    utils.drawGrid(GRID_X, GRID_Y, grid, screen, MARGIN, GRID_SIZE)
+    utils.drawGrid(GRID_X, GRID_Y, grid, screen, MARGIN, GRID_SIZE, BLACK, GRAY, GREEN, RED)
 
     pygame.display.flip()
     startTime = time.time()

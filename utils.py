@@ -3,14 +3,6 @@ from random import randint
 
 import pygame
 
-GRAY = (169, 169, 169)
-BLACK = (0, 0, 0)
-GREEN = (0, 255, 0)
-RED = (255, 0, 0)
-BLUE = (0, 0, 255)
-CYAN = (0, 204, 204)
-PINK = (255, 105, 180)
-
 
 def drawRect(color, x, y, screen, MARGIN, GRID_SIZE):
     pygame.draw.rect(screen,
@@ -68,7 +60,7 @@ def drawPath(path, color, start, goal, screen, MARGIN, GRID_SIZE):
             pygame.display.update()
 
 
-def drawGrid(GRID_X, GRID_Y, grid, screen, MARGIN, GRID_SIZE):
+def drawGrid(GRID_X, GRID_Y, grid, screen, MARGIN, GRID_SIZE, BLACK, GRAY, GREEN, RED):
     for y in range(GRID_X):
         for x in range(GRID_Y):
             if grid[x][y].isObstacle:
