@@ -6,6 +6,25 @@ import node
 
 pygame.init()
 
+GRID_SIZE = 10
+GRID_X = 100
+GRID_Y = 100
+MARGIN = 2
+os.environ['SDL_VIDEO_CENTERED'] = '1'
+screen = pygame.display.set_mode(
+    (GRID_X * GRID_SIZE + GRID_X * MARGIN + MARGIN, GRID_Y * GRID_SIZE + GRID_Y * MARGIN + MARGIN), pygame.RESIZABLE)
+pygame.display.set_caption('A* Algorithm')
+GRAY = (169, 169, 169)
+BLACK = (0, 0, 0)
+GREEN = (0, 255, 0)
+RED = (255, 0, 0)
+BLUE = (0, 0, 255)
+CYAN = (0, 204, 204)
+PINK = (255, 105, 180)
+percentChanceForWall = 30
+actualPercentOfWalls = 0
+weight = 2
+
 
 def araStar(start, goal, weight):
     openList = set()
@@ -111,69 +130,34 @@ def improvedSolution(goal, openList, weight, pathCost):
     return None
 
 
+def main():
+    grid = [[node.Node(i, j) for j in range(GRID_X)] for i in range(GRID_Y)]
+
+    start = grid[0][GRID_Y - 1]
+    goal = grid[GRID_X - 1][0]
+
+    grid = utils.setChildren(GRID_X, GRID_Y, grid, percentChanceForWall, actualPercentOfWalls, start, goal)
+    utils.drawGrid(GRID_X, GRID_Y, grid, screen, MARGIN, GRID_SIZE, BLACK, GRAY, GREEN, RED)
+
+    pygame.display.flip()
+    startTime = time.time()
+    path = araStar(start, goal, weight)
+    print('It took %s seconds to run' % str(round(time.time() - startTime, 3)))
+    if path:
+        utils.drawPath(path, PINK, start, goal, screen, MARGIN, GRID_SIZE)
+        print(path[-1].G)
+        utils.drawRect(GREEN, start.x, start.y, screen, MARGIN, GRID_SIZE)
+        utils.drawRect(RED, goal.x, goal.y, screen, MARGIN, GRID_SIZE)
+        pygame.display.update()
+    else:
+        print('No path from start to goal.')
+
+    while True:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                quit()
 
 
-
-GRID_SIZE = 10
-GRID_X = 100
-GRID_Y = 100
-MARGIN = 2
-os.environ['SDL_VIDEO_CENTERED'] = '1'
-screen = pygame.display.set_mode(
-    (GRID_X * GRID_SIZE + GRID_X * MARGIN + MARGIN, GRID_Y * GRID_SIZE + GRID_Y * MARGIN + MARGIN), pygame.RESIZABLE)
-pygame.display.set_caption('A* Algorithm')
-GRAY = (169, 169, 169)
-BLACK = (0, 0, 0)
-GREEN = (0, 255, 0)
-RED = (255, 0, 0)
-BLUE = (0, 0, 255)
-CYAN = (0, 204, 204)
-PINK = (255, 105, 180)
-percentChanceForWall = 30
-actualPercentOfWalls = 0
-weight = 2
-
-grid = [[node.Node(i, j) for j in range(GRID_X)] for i in range(GRID_Y)]
-
-start = grid[0][GRID_Y - 1]
-goal = grid[GRID_X - 1][0]
-
-grid = utils.setChildren(GRID_X, GRID_Y, grid, percentChanceForWall, actualPercentOfWalls, start, goal)
-
-
-
-# for i in range(19, 79):
-#     grid[i][19].setObstacle()
-#
-# for i in range(19, 79):
-#     grid[79][i].setObstacle()
-
-for y in range(GRID_X):
-    for x in range(GRID_Y):
-        if grid[x][y].isObstacle:
-            utils.drawRect(BLACK, x, y, screen, MARGIN, GRID_SIZE)
-        else:
-            utils.drawRect(GRAY, x, y, screen, MARGIN, GRID_SIZE)
-        if x == 0 and y == GRID_Y - 1:
-            utils.drawRect(GREEN, x, y, screen, MARGIN, GRID_SIZE)
-        if x == GRID_X - 1 and y == 0:
-            utils.drawRect(RED, x, y, screen, MARGIN, GRID_SIZE)
-pygame.display.flip()
-startTime = time.time()
-path = araStar(start, goal, weight)
-print('It took %s seconds to run' % str(round(time.time() - startTime, 3)))
-if path:
-    utils.drawPath(path, PINK, start, goal, screen, MARGIN, GRID_SIZE)
-    print(path[-1].G)
-    utils.drawRect(GREEN, start.x, start.y, screen, MARGIN, GRID_SIZE)
-    utils.drawRect(RED, goal.x, goal.y, screen, MARGIN, GRID_SIZE)
-    pygame.display.update()
-else:
-    print('No path from start to goal.')
-
-while True:
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            pygame.quit()
-            quit()
-
+if __name__ == "__main__":
+    main()
