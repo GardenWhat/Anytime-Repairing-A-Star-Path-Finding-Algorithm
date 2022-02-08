@@ -23,62 +23,42 @@ CYAN = (0, 204, 204)
 PINK = (255, 105, 180)
 percentChanceForWall = 30
 actualPercentOfWalls = 0
-weight = 2
+w = 200
 
 
 def araStar(start, goal, weight):
-    openList = set()
-    closedList = set()
     incumbent = []
-    # s
-    current = start
-
-    current.G = 0
-
-    # sets the start nodes heuristic
-    current.H = utils.ED(current, goal)
-
-    # adds start to open list
-    openList.add(current)
-
-    # G
     pathCost = 100000000000000000
 
-    # weight Delta
-    weightDelta = weight / 2
+    weightDelta = int(weight / 10)
+    nonWeightedRun = False
 
-    # while there are nodes in the open list
-    while openList:
-        NewSolution = improvedSolution(goal, openList, weight, pathCost)
+    while weight > 0:
+        newSolution = improvedSolution(start, goal, weight, pathCost)
 
-        if NewSolution:
-            pathCost = NewSolution[-1].G
-            incumbent = NewSolution
+        if newSolution:
+            pathCost = newSolution[-1].G
+            incumbent = newSolution
             utils.drawPath(incumbent, utils.randomColor(), start, goal, screen, MARGIN, GRID_SIZE)
             time.sleep(.5)
-        else:
-            return incumbent
 
-        # weight = weight - weightDelta
-
-        for child in current.children:
-            if current.G + utils.ED(current, child) < child.G:
-                if child.isObstacle:
-                    continue
-                child.parent = current
-                child.G = current.G + child.cost()
-                child.H = utils.ED(child, goal)
-
-        for node in list(openList):
-            if node.G + node.H >= pathCost:
-                closedList.add(node)
-                openList.remove(node)
+        weight = weight - weightDelta
+        if weight < 0 and not nonWeightedRun:
+            weight = 1
+            nonWeightedRun = True
     return incumbent
 
 
-def improvedSolution(goal, openList, weight, pathCost):
+def improvedSolution(start, goal, weight, pathCost):
+    openList = set()
     closedList = set()
-    # while there are nodes in the open list
+
+    current = start
+    current.G = 0
+    current.H = utils.ED(current, goal)
+
+    openList.add(current)
+
     while openList:
 
         current = min(openList, key=lambda o: o.G + (weight * o.H))
@@ -90,6 +70,14 @@ def improvedSolution(goal, openList, weight, pathCost):
         if pathCost <= current.G + (weight * current.H):
             # pathCost is proven to be w-admissible
             return None
+
+        if current == goal:
+            path = []
+            while current.parent:
+                path.append(current)
+                current = current.parent
+            path.append(current)
+            return path[::-1]
 
         # for each child
         for node in current.children:
@@ -141,11 +129,11 @@ def main():
 
     pygame.display.flip()
     startTime = time.time()
-    path = araStar(start, goal, weight)
+    path = araStar(start, goal, w)
     print('It took %s seconds to run' % str(round(time.time() - startTime, 3)))
     if path:
         utils.drawPath(path, PINK, start, goal, screen, MARGIN, GRID_SIZE)
-        print(path[-1].G)
+        print(f"Finished with a weight of {round(path[-1].G, 3)}")
         utils.drawRect(GREEN, start.x, start.y, screen, MARGIN, GRID_SIZE)
         utils.drawRect(RED, goal.x, goal.y, screen, MARGIN, GRID_SIZE)
         pygame.display.update()
